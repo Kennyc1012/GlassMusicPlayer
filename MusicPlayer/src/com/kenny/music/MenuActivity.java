@@ -27,7 +27,8 @@ public class MenuActivity extends Activity
 	{
 		getMenuInflater().inflate(R.menu.menu, menu);
 		//Need reference to this so we can change its value to play or pause based on if the song is playing
-		play_paused=menu.findItem(R.id.play_pause);		
+		play_paused=menu.findItem(R.id.play_pause);	
+		
 		return true;
 	}
 	 /** Defines callbacks for service binding, passed to bindService() */

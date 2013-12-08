@@ -76,40 +76,16 @@ public class MainService extends Service
 						mMediaPlayer.prepare();
 			        	mMediaPlayer.start();
 			        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-			        	 Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
+			        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
 			 	        if(bm==null)
 			 	        {
-			 	        	new AsyncTask<String, Void, Bitmap>() 
-			 	        	{
-			 					@Override
-			 					protected Bitmap doInBackground(String... params) 
-			 					{
-			 						try
-			 						{
-			 							return MusicUtil.getAlbumArtWork(params[0]);
-			 						}
-			 						catch (Exception e)
-			 						{
-			 							
-			 						}
-			 						return null;
-			 					}
-			 					@Override
-			 					protected void onPostExecute(Bitmap result) 
-			 					{
-			 						if(result!=null)
-			 						{
-			 							render.setAlbumArtwork(result);
-			 						}
-			 						else
-			 						{
-			 							render.setAlbumArtwork(R.drawable.no_art);
-			 						}
-			 						super.onPostExecute(result);
-			 					}
-			 				}.execute(songs.get(songIndex).getLocation());
+			 	        	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
 			 	        }
-			        	handler.postDelayed(updateTask, 250);
+			 	        else
+				 	    {
+				 	    	render.setAlbumArtwork(bm);
+				 	    }
+			 	        handler.postDelayed(updateTask, 250);
 					}
 					catch (Exception e)
 					{
@@ -150,40 +126,12 @@ public class MainService extends Service
 	        Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
 	        if(bm==null)
 	        {
-	        	new AsyncTask<String, Void, Bitmap>() 
-	        	{
-					@Override
-					protected Bitmap doInBackground(String... params) 
-					{
-						try
-						{
-							return MusicUtil.getAlbumArtWork(params[0]);
-						}
-						catch (Exception e)
-						{
-							
-						}
-						return null;
-					}
-					@Override
-					protected void onPostExecute(Bitmap result) 
-					{
-						if(result!=null)
-						{
-							render.setAlbumArtwork(result);
-						}
-						else
-						{
-							render.setAlbumArtwork(R.drawable.no_art);
-						}
-						super.onPostExecute(result);
-					}
-				}.execute(songs.get(songIndex).getLocation());
+	        	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
 	        }
 	        else
-	        {
-	        	render.setAlbumArtwork(bm);
-	        }
+	 	    {
+	 	    	render.setAlbumArtwork(bm);
+	 	    }
 	        mLiveCard.enableDirectRendering(true).getSurfaceHolder().addCallback(render);
 	        //Immediately play the first song
 	        try
@@ -294,39 +242,15 @@ public class MainService extends Service
 					mMediaPlayer.prepare();
 		        	mMediaPlayer.start();
 		        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-		        	 Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
-			 	        if(bm==null)
-			 	        {
-			 	        	new AsyncTask<String, Void, Bitmap>() 
-			 	        	{
-			 					@Override
-			 					protected Bitmap doInBackground(String... params) 
-			 					{
-			 						try
-			 						{
-			 							return MusicUtil.getAlbumArtWork(params[0]);
-			 						}
-			 						catch (Exception e)
-			 						{
-			 							
-			 						}
-			 						return null;
-			 					}
-			 					@Override
-			 					protected void onPostExecute(Bitmap result) 
-			 					{
-			 						if(result!=null)
-			 						{
-			 							render.setAlbumArtwork(result);
-			 						}
-			 						else
-			 						{
-			 							render.setAlbumArtwork(R.drawable.no_art);
-			 						}
-			 						super.onPostExecute(result);
-			 					}
-			 				}.execute(songs.get(songIndex).getLocation());
-			 	        }
+		        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
+			 	    if(bm==null)
+			 	    {
+			 	    	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+			 	    }
+			 	    else
+			 	    {
+			 	    	render.setAlbumArtwork(bm);
+			 	    }
 		        	handler.postAtTime(updateTask, 250);
 				}
 				catch (Exception e)
@@ -350,39 +274,15 @@ public class MainService extends Service
 					mMediaPlayer.prepare();
 		        	mMediaPlayer.start();
 		        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-		        	 Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
-			 	        if(bm==null)
-			 	        {
-			 	        	new AsyncTask<String, Void, Bitmap>() 
-			 	        	{
-			 					@Override
-			 					protected Bitmap doInBackground(String... params) 
-			 					{
-			 						try
-			 						{
-			 							return MusicUtil.getAlbumArtWork(params[0]);
-			 						}
-			 						catch (Exception e)
-			 						{
-			 							
-			 						}
-			 						return null;
-			 					}
-			 					@Override
-			 					protected void onPostExecute(Bitmap result) 
-			 					{
-			 						if(result!=null)
-			 						{
-			 							render.setAlbumArtwork(result);
-			 						}
-			 						else
-			 						{
-			 							render.setAlbumArtwork(R.drawable.no_art);
-			 						}
-			 						super.onPostExecute(result);
-			 					}
-			 				}.execute(songs.get(songIndex).getLocation());
-			 	        }
+		        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
+			 	    if(bm==null)
+			 	    {
+			 	    	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+			 	    }
+			 	   else
+			 	    {
+			 	    	render.setAlbumArtwork(bm);
+			 	    }
 		        	handler.postAtTime(updateTask, 250);
 				}
 				catch (Exception e)
@@ -406,39 +306,15 @@ public class MainService extends Service
 				mMediaPlayer.prepare();
 	        	mMediaPlayer.start();
 	        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-	        	 Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
-		 	        if(bm==null)
-		 	        {
-		 	        	new AsyncTask<String, Void, Bitmap>() 
-		 	        	{
-		 					@Override
-		 					protected Bitmap doInBackground(String... params) 
-		 					{
-		 						try
-		 						{
-		 							return MusicUtil.getAlbumArtWork(params[0]);
-		 						}
-		 						catch (Exception e)
-		 						{
-		 							
-		 						}
-		 						return null;
-		 					}
-		 					@Override
-		 					protected void onPostExecute(Bitmap result) 
-		 					{
-		 						if(result!=null)
-		 						{
-		 							render.setAlbumArtwork(result);
-		 						}
-		 						else
-		 						{
-		 							render.setAlbumArtwork(R.drawable.no_art);
-		 						}
-		 						super.onPostExecute(result);
-		 					}
-		 				}.execute(songs.get(songIndex).getLocation());
-		 	        }
+	        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
+		 	    if(bm==null)
+		 	    {
+		 	    	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+		 	    }
+		 	    else
+		 	    {
+		 	    	render.setAlbumArtwork(bm);
+		 	    }
 	        	handler.postAtTime(updateTask, 250);
 			}
 			catch (Exception e)
@@ -468,39 +344,15 @@ public class MainService extends Service
 				mMediaPlayer.prepare();
 	        	mMediaPlayer.start();
 	        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-	        	 Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
-		 	        if(bm==null)
-		 	        {
-		 	        	new AsyncTask<String, Void, Bitmap>() 
-		 	        	{
-		 					@Override
-		 					protected Bitmap doInBackground(String... params) 
-		 					{
-		 						try
-		 						{
-		 							return MusicUtil.getAlbumArtWork(params[0]);
-		 						}
-		 						catch (Exception e)
-		 						{
-		 							
-		 						}
-		 						return null;
-		 					}
-		 					@Override
-		 					protected void onPostExecute(Bitmap result) 
-		 					{
-		 						if(result!=null)
-		 						{
-		 							render.setAlbumArtwork(result);
-		 						}
-		 						else
-		 						{
-		 							render.setAlbumArtwork(R.drawable.no_art);
-		 						}
-		 						super.onPostExecute(result);
-		 					}
-		 				}.execute(songs.get(songIndex).getLocation());
-		 	        }
+	        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
+		 	    if(bm==null)
+		 	    {
+		 	    	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+		 	    }
+		 	    else
+		 	    {
+		 	    	render.setAlbumArtwork(bm);
+		 	    }
 	        	handler.postAtTime(updateTask, 250);
 			}
 			catch (Exception e)
@@ -524,40 +376,15 @@ public class MainService extends Service
 				mMediaPlayer.prepare();
 	        	mMediaPlayer.start();
 	        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-	        	 Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
-		 	        if(bm==null)
-		 	        {
-		 	        	new AsyncTask<String, Void, Bitmap>() 
-		 	        	{
-		 					@Override
-		 					protected Bitmap doInBackground(String... params) 
-		 					{
-		 						try
-		 						{
-		 							return MusicUtil.getAlbumArtWork(params[0]);
-		 						}
-		 						catch (Exception e)
-		 						{
-		 							
-		 						}
-		 						return null;
-		 					}
-		 					@Override
-		 					protected void onPostExecute(Bitmap result) 
-		 					{
-		 						if(result!=null)
-		 						{
-		 							render.setAlbumArtwork(result);
-		 						}
-		 						else
-		 						{
-
-		 							
-		 						}
-		 						super.onPostExecute(result);
-		 					}
-		 				}.execute(songs.get(songIndex).getLocation());
-		 	        }
+	        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
+		 	    if(bm==null)
+		 	    {
+		 	    	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+		 	    }
+		 	    else
+		 	    {
+		 	    	render.setAlbumArtwork(bm);
+		 	    }
 	        	handler.postAtTime(updateTask, 250);
 			}
 			catch (Exception e)
@@ -603,4 +430,41 @@ public class MainService extends Service
 			handler.postDelayed(this, 250);
 		}
 	};
+	/***
+	 * Helper class to load Album Art in the background and display it
+	 * @author Kenny
+	 *
+	 */
+	private class LoadAlbumBitmap extends AsyncTask<String,Void,Bitmap>
+	{
+		@Override
+		protected Bitmap doInBackground(String... params) 
+		{
+			Bitmap bm=MusicUtil.getAlbumArtWork(params[0]);
+			if(bm!=null)
+			{
+				cache.addBitmapToMemoryCache(String.valueOf(params[0].hashCode()), bm);
+			}			
+			return bm;
+		}
+		@Override
+		protected void onPostExecute(Bitmap result) 
+		{
+			if(result!=null)
+			{
+				if(render!=null)
+				{
+					render.setAlbumArtwork(result);
+				}
+			}
+			else
+			{
+				if(render!=null)
+				{
+					render.setAlbumArtwork(R.drawable.no_art);
+				}
+			}
+			super.onPostExecute(result);;
+		}
+	}
 }
