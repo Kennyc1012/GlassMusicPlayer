@@ -1,6 +1,8 @@
 GlassMusicPlayer
 ================
 GlassMusicPlayer is an mp3 player for Google Glass. It does not require an internet connection, it plays files off of your internal storage (on glass)
+
+
 ![Screen Shot1](https://github.com/Kennyc1012/GlassMusicPlayer/raw/master/Screenshot_1.png)
 ![Screen Shot2](https://github.com/Kennyc1012/GlassMusicPlayer/raw/master/Screenshot_2.png)
 
