@@ -1,0 +1,18 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item
+        android:id="@+id/play_pause"
+        android:title="@string/pause"
+        android:icon="@drawable/ic_music_pause_50"/>
+      <item
+        android:id="@+id/prev"
+        android:title="@string/previous"
+        android:icon="@drawable/ic_music_previous_50"/>
+    <item
+        android:id="@+id/next"
+        android:title="@string/next"
+        android:icon="@drawable/ic_music_next_50"/>  
+    <item
+        android:id="@+id/stop"
+        android:title="@string/stop"
+        android:icon="@drawable/ic_no_50"/>
+</menu>

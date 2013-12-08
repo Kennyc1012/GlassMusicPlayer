@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Music Player</string>
+    <string name="trigger_phrase">Play Music</string>
+    <string name="stop">Stop</string>
+	<string name="play">Play</string>
+	<string name="pause">Pause</string>
+	<string name="next">Next</string>
+	<string name="previous">Previous</string>
+</resources>
