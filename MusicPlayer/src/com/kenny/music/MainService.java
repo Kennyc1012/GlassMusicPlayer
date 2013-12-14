@@ -12,9 +12,13 @@ import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.util.Log;
+import android.view.View;
+import android.widget.RemoteViews;
 
 import com.google.android.glass.timeline.LiveCard;
 import com.google.android.glass.timeline.TimelineManager;
@@ -34,7 +38,7 @@ public class MainService extends Service
 	private int songIndex=0;
 	private Handler handler = new Handler();
 	private final IBinder mBinder = new LocalBinder();
-	private boolean paused=false;	
+	private boolean paused=false;
 	private MusicRender render;
 	private MemoryCache cache;
 	@Override
@@ -97,18 +101,6 @@ public class MainService extends Service
         songs = new ArrayList<MusicItem>();
         //We will use 1/8th of our memory or cache
         cache= new MemoryCache(8);
-        //Our path is hard coded for now
-        File dir =new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/DCIM/MyMusic");              
-        for(File f:dir.listFiles())
-        {
-        	String path=f.getAbsolutePath();
-        	MusicItem mi= new MusicItem(path);
-        	mi.setAlbum(MusicUtil.getAlbum(path));
-        	mi.setArtist(MusicUtil.getArtist(path));
-        	mi.setTitle(MusicUtil.getSongTitle(path));
-        	mi.setDuration(MusicUtil.getDuration(path));
-        	songs.add(mi);
-        }
     }
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) 
@@ -120,32 +112,119 @@ public class MainService extends Service
 	        // Display the options menu when the live card is tapped.
 	        Intent menuIntent = new Intent(this, MenuActivity.class);
 	        menuIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-	        mLiveCard.setAction(PendingIntent.getActivity(this, 0, menuIntent, 0));	  
-	        render = new MusicRender(getApplicationContext());
-	        //We key our bitmaps on the hash of their location
-	        Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
-	        if(bm==null)
+	        mLiveCard.setAction(PendingIntent.getActivity(this, 0, menuIntent, 0));
+	        final RemoteViews loadingView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.loading_card);
+	        mLiveCard.setViews(loadingView);
+	        //Load our files in the background. I believe that doing this on the main thread caused an issue with my glass
+	        // that I had to factory reset to to resolve
+	        new AsyncTask<Void, Void, Boolean>()
 	        {
-	        	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
-	        }
-	        else
-	 	    {
-	 	    	render.setAlbumArtwork(bm);
-	 	    }
-	        mLiveCard.enableDirectRendering(true).getSurfaceHolder().addCallback(render);
-	        //Immediately play the first song
-	        try
-	        {
-	        	mMediaPlayer.setDataSource(songs.get(songIndex).getLocation());
-	        	mMediaPlayer.prepare();
-	        	mMediaPlayer.start();
-	        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-	        	handler.postAtTime(updateTask, 250);
-	        }
-	        catch (Exception e)
-	        {
-	        	
-	        }
+				@Override
+				protected Boolean doInBackground(Void... params) 
+				{
+					try
+					{
+						//Load our files from the hardcoded path
+						File dir =new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/DCIM/MyMusic");              
+				        for(File f:dir.listFiles())
+				        {
+				        	String path=f.getAbsolutePath();
+				        	MusicItem mi= new MusicItem(path);
+				        	mi.setAlbum(MusicUtil.getAlbum(path));
+				        	mi.setArtist(MusicUtil.getArtist(path));
+				        	mi.setTitle(MusicUtil.getSongTitle(path));
+				        	mi.setDuration(MusicUtil.getDuration(path));
+				        	songs.add(mi);
+				        }
+						return true;
+					}
+					catch (Exception e)
+					{
+						return false;
+					}
+				}
+				@Override
+				protected void onPostExecute(Boolean result) 
+				{
+					if(result)
+					{
+						//Make sure we actually have songs to play
+						if(songs!=null&&songs.size()>0)
+						{
+							render = new MusicRender(getApplicationContext());
+					        //We key our bitmaps on the hash of their location
+					        Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
+					        if(bm==null)
+					        {
+					        	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+					        }
+					        else
+					 	    {
+					 	    	render.setAlbumArtwork(bm);
+					 	    }
+					        mLiveCard.unpublish();
+					        mLiveCard.enableDirectRendering(true).getSurfaceHolder().addCallback(render);
+					        //Immediately play the first song
+					        try
+					        {
+					        	mMediaPlayer.setDataSource(songs.get(songIndex).getLocation());
+					        	mMediaPlayer.prepare();
+					        	mMediaPlayer.start();
+					        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
+					        	handler.postAtTime(updateTask, 250);
+					        	mLiveCard.publish();
+					        }
+					        catch (Exception e)
+					        {
+					        	
+					        }
+						}
+						else
+						{
+							//If we have no songs to play, fail gracefully
+							loadingView.setTextViewText(R.id.message, getString(R.string.no_songs));
+							loadingView.setViewVisibility(R.id.progressBar, View.GONE);
+							mLiveCard.setViews(loadingView);
+							//Start a three second timer to kill the program
+							new CountDownTimer(3000,3000) 
+							{							
+								@Override
+								public void onTick(long millisUntilFinished) 
+								{
+									
+								}							
+								@Override
+								public void onFinish() 
+								{
+									stopSelf();
+								}
+							}.start();
+						}						
+					}
+					else
+					{
+						//If we have error, fail gracefully
+						loadingView.setTextViewText(R.id.message, getString(R.string.error_loading_music));
+						loadingView.setViewVisibility(R.id.progressBar, View.GONE);
+						mLiveCard.setViews(loadingView);
+						//Start a three second timer to kill the program
+						new CountDownTimer(3000,3000) 
+						{							
+							@Override
+							public void onTick(long millisUntilFinished) 
+							{
+								
+							}							
+							@Override
+							public void onFinish() 
+							{
+								stopSelf();
+							}
+						}.start();
+					}
+					super.onPostExecute(result);
+				}				
+	        }.execute();	        
 	        mLiveCard.publish();
 	    }
 		return START_STICKY;

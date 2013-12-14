@@ -137,5 +137,6 @@ public class MusicRender implements SurfaceHolder.Callback
 	public void setAlbumArtwork(int resId)
 	{
 		albumArt.setImageResource(resId);
+		draw();
 	}
 }

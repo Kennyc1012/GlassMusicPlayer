@@ -4,8 +4,8 @@ import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 public class MusicUtil 
 {
-	//Glass resolution constants
-	private static final int GLASS_WIDTH=640;
+	//Glass resolution constants, Our artwork will take up half of the screen with full height
+	private static final int GLASS_WIDTH=320;
 	private static final int GLASS_HEIGHT=360;
 	/***
 	 * Gets an image for the Album Art Work
