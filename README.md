@@ -4,7 +4,6 @@ GlassMusicPlayer is an mp3 player for Google Glass. It does not require an inter
 
 
 ![Screen Shot1](https://github.com/Kennyc1012/GlassMusicPlayer/raw/master/Screenshot_1.png)
-![Screen Shot2](https://github.com/Kennyc1012/GlassMusicPlayer/raw/master/Screenshot_2.png)
 
 
 To use, adb sideload the apk to your glass as any other. 
