@@ -22,8 +22,8 @@
 	        android:layout_height="wrap_content"
 	        android:textColor="#FFFFFF"
 	        android:id="@+id/title"
-	        android:maxLines="2"        
-	        android:ellipsize="end"
+	        android:maxLines="2"    
+	        android:minLines="2"
 	        style="?android:attr/textAppearanceMedium"/>
 	    <!-- Song Artist -->
 	    <TextView 
