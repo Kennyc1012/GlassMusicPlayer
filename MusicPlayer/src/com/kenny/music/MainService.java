@@ -16,7 +16,6 @@ import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -107,8 +106,7 @@ public class MainService extends Service
 	{		
 		if (mLiveCard == null) 
 	    {
-			mLiveCard = mTimelineManager.getLiveCard(CARD_ID);
-	        mLiveCard.setNonSilent(true);
+			mLiveCard = mTimelineManager.createLiveCard(CARD_ID);
 	        // Display the options menu when the live card is tapped.
 	        Intent menuIntent = new Intent(this, MenuActivity.class);
 	        menuIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -163,7 +161,7 @@ public class MainService extends Service
 					 	    	render.setAlbumArtwork(bm);
 					 	    }
 					        mLiveCard.unpublish();
-					        mLiveCard.enableDirectRendering(true).getSurfaceHolder().addCallback(render);
+					        mLiveCard.setDirectRenderingEnabled(true).getSurfaceHolder().addCallback(render);
 					        //Immediately play the first song
 					        try
 					        {
@@ -172,7 +170,7 @@ public class MainService extends Service
 					        	mMediaPlayer.start();
 					        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
 					        	handler.postAtTime(updateTask, 250);
-					        	mLiveCard.publish();
+					        	mLiveCard.publish(LiveCard.PublishMode.REVEAL);
 					        }
 					        catch (Exception e)
 					        {
@@ -225,7 +223,7 @@ public class MainService extends Service
 					super.onPostExecute(result);
 				}				
 	        }.execute();	        
-	        mLiveCard.publish();
+	        mLiveCard.publish(LiveCard.PublishMode.REVEAL);
 	    }
 		return START_STICKY;
 	}
