@@ -16,7 +16,7 @@ public class MenuActivity extends Activity
 {
 	private MainService mService;
 	private boolean mBound = false;
-	private MenuItem play_paused;
+	private MenuItem play_paused,shuffled;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) 
 	{
@@ -28,7 +28,7 @@ public class MenuActivity extends Activity
 		getMenuInflater().inflate(R.menu.menu, menu);
 		//Need reference to this so we can change its value to play or pause based on if the song is playing
 		play_paused=menu.findItem(R.id.play_pause);	
-		
+		shuffled=menu.findItem(R.id.shuffle);
 		return true;
 	}
 	 /** Defines callbacks for service binding, passed to bindService() */
@@ -50,6 +50,14 @@ public class MenuActivity extends Activity
     			play_paused.setTitle(R.string.pause);
     			play_paused.setIcon(R.drawable.ic_music_pause_50);
     		}
+            if(mService.isShuffled())
+            {
+            	shuffled.setIcon(R.drawable.shuffle_on);
+            }
+            else
+            {
+            	shuffled.setIcon(R.drawable.shuffle_off);
+            }
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) 
@@ -110,16 +118,16 @@ public class MenuActivity extends Activity
     	case R.id.play_pause:
     		if(mService.isPaused())
     		{
-    			play_paused.setTitle(R.string.play);
-    			play_paused.setIcon(R.drawable.ic_music_play_50);
     			mService.resumeMusic();
     		}
     		else
     		{
-    			play_paused.setTitle(R.string.pause);
-    			play_paused.setIcon(R.drawable.ic_music_pause_50);
     			mService.pauseMusic();
     		}
+    		return true;
+    	//Shuffle
+    	case R.id.shuffle:
+    		mService.shuffleMusic();
     		return true;
     	}
     	return super.onOptionsItemSelected(item);

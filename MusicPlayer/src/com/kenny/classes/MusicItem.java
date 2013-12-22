@@ -8,6 +8,14 @@ public class MusicItem
 {
 	private String location,title,artist,album;
 	private int duration;
+	private long id;
+	
+	public long getId() {
+		return id;
+	}
+	public void setId(long id) {
+		this.id = id;
+	}
 	public MusicItem(String fileLocation)
 	{
 		location=fileLocation;

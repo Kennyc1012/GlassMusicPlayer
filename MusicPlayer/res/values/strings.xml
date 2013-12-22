@@ -8,8 +8,7 @@
 	<string name="pause">Pause</string>
 	<string name="next">Next</string>
 	<string name="previous">Previous</string>
-	<string name="suffle_on">Shuffle On</string>
-	<string name="suffle_off">Shuffle Off</string>
+	<string name="shuffle">Shuffle</string>
 	<string name="loading_message">Loading your music. One moment&#8230;</string>
 	<string name="no_songs">No songs found</string>
 	<string name="error_loading_music">An error occurred while loading your music</string>

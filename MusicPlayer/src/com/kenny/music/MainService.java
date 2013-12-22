@@ -1,21 +1,22 @@
 package com.kenny.music;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.CountDownTimer;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.provider.MediaStore;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -30,20 +31,20 @@ public class MainService extends Service
 	private final String CARD_ID="my_music_card";
 	//Constant for pressing previous. If song is more than 5000 Milliseconds (5 seconds), the track will start over, other wise, it will go back a track
 	private final int PREVIOUS_TRACKER_MIN=1000*5;
-	private LiveCard mLiveCard;
-	private MediaPlayer mMediaPlayer;
-	private TimelineManager mTimelineManager;
-	private List<MusicItem>songs;
+	private LiveCard liveCard;
+	private MediaPlayer mediaPlayer;
+	private TimelineManager timelineManager;
+	private List<MusicItem>songs,shuffledSongs;
 	private int songIndex=0;
 	private Handler handler = new Handler();
-	private final IBinder mBinder = new LocalBinder();
-	private boolean paused=false;
+	private final IBinder binder = new LocalBinder();
+	private boolean paused=false,shuffled=false;
 	private MusicRender render;
 	private MemoryCache cache;
 	@Override
 	public IBinder onBind(Intent intent) 
 	{
-		return mBinder;
+		return binder;
 	}
 	public class LocalBinder extends Binder 
 	 {
@@ -56,9 +57,9 @@ public class MainService extends Service
     public void onCreate() 
 	{
         super.onCreate();
-        mTimelineManager = TimelineManager.from(this);
-        mMediaPlayer= new MediaPlayer();
-        mMediaPlayer.setOnCompletionListener(new OnCompletionListener() 
+        timelineManager = TimelineManager.from(this);
+        mediaPlayer= new MediaPlayer();
+        mediaPlayer.setOnCompletionListener(new OnCompletionListener() 
         {			
 			@Override
 			public void onCompletion(MediaPlayer mp) 
@@ -74,10 +75,10 @@ public class MainService extends Service
 							 handler.removeCallbacks(updateTask);
 						}
 						//Play the next song
-						mMediaPlayer.reset();
-						mMediaPlayer.setDataSource(songs.get(songIndex).getLocation());
-						mMediaPlayer.prepare();
-			        	mMediaPlayer.start();
+						mediaPlayer.reset();
+						mediaPlayer.setDataSource(songs.get(songIndex).getLocation());
+						mediaPlayer.prepare();
+			        	mediaPlayer.start();
 			        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
 			        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
 			 	        if(bm==null)
@@ -104,15 +105,15 @@ public class MainService extends Service
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) 
 	{		
-		if (mLiveCard == null) 
+		if (liveCard == null) 
 	    {
-			mLiveCard = mTimelineManager.createLiveCard(CARD_ID);
+			liveCard = timelineManager.createLiveCard(CARD_ID);
 	        // Display the options menu when the live card is tapped.
 	        Intent menuIntent = new Intent(this, MenuActivity.class);
 	        menuIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-	        mLiveCard.setAction(PendingIntent.getActivity(this, 0, menuIntent, 0));
+	        liveCard.setAction(PendingIntent.getActivity(this, 0, menuIntent, 0));
 	        final RemoteViews loadingView = new RemoteViews(getApplicationContext().getPackageName(), R.layout.loading_card);
-	        mLiveCard.setViews(loadingView);
+	        liveCard.setViews(loadingView);
 	        //Load our files in the background. I believe that doing this on the main thread caused an issue with my glass
 	        // that I had to factory reset to to resolve
 	        new AsyncTask<Void, Void, Boolean>()
@@ -122,18 +123,26 @@ public class MainService extends Service
 				{
 					try
 					{
-						//Load our files from the hardcoded path
-						File dir =new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/DCIM/MyMusic");              
-				        for(File f:dir.listFiles())
-				        {
-				        	String path=f.getAbsolutePath();
-				        	MusicItem mi= new MusicItem(path);
-				        	mi.setAlbum(MusicUtil.getAlbum(path));
-				        	mi.setArtist(MusicUtil.getArtist(path));
-				        	mi.setTitle(MusicUtil.getSongTitle(path));
-				        	mi.setDuration(MusicUtil.getDuration(path));
-				        	songs.add(mi);
-				        }
+						//Some audio may be explicitly marked as not being music
+						String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
+						//Query the media store to get all mp3 files on our device. This will pick up any mp3 files found from the media scanner
+						String[] projection = {MediaStore.Audio.Media.DATA,MediaStore.Audio.Media._ID};
+						Cursor c=getApplicationContext().getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+						projection, selection,null,null);
+						if(c!=null)
+						{
+							while(c.moveToNext())
+							{
+								String path=c.getString(0);
+					        	MusicItem mi= new MusicItem(path);
+					        	mi.setId(c.getLong(1));
+					        	mi.setAlbum(MusicUtil.getAlbum(path));
+					        	mi.setArtist(MusicUtil.getArtist(path));
+					        	mi.setTitle(MusicUtil.getSongTitle(path));
+					        	mi.setDuration(MusicUtil.getDuration(path));
+					        	songs.add(mi);
+							}
+						}
 						return true;
 					}
 					catch (Exception e)
@@ -160,17 +169,17 @@ public class MainService extends Service
 					 	    {
 					 	    	render.setAlbumArtwork(bm);
 					 	    }
-					        mLiveCard.unpublish();
-					        mLiveCard.setDirectRenderingEnabled(true).getSurfaceHolder().addCallback(render);
+					        liveCard.unpublish();
+					        liveCard.setDirectRenderingEnabled(true).getSurfaceHolder().addCallback(render);
 					        //Immediately play the first song
 					        try
 					        {
-					        	mMediaPlayer.setDataSource(songs.get(songIndex).getLocation());
-					        	mMediaPlayer.prepare();
-					        	mMediaPlayer.start();
+					        	mediaPlayer.setDataSource(songs.get(songIndex).getLocation());
+					        	mediaPlayer.prepare();
+					        	mediaPlayer.start();
 					        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
 					        	handler.postAtTime(updateTask, 250);
-					        	mLiveCard.publish(LiveCard.PublishMode.REVEAL);
+					        	liveCard.publish(LiveCard.PublishMode.REVEAL);
 					        }
 					        catch (Exception e)
 					        {
@@ -182,7 +191,7 @@ public class MainService extends Service
 							//If we have no songs to play, fail gracefully
 							loadingView.setTextViewText(R.id.message, getString(R.string.no_songs));
 							loadingView.setViewVisibility(R.id.progressBar, View.GONE);
-							mLiveCard.setViews(loadingView);
+							liveCard.setViews(loadingView);
 							//Start a three second timer to kill the program
 							new CountDownTimer(3000,3000) 
 							{							
@@ -204,7 +213,7 @@ public class MainService extends Service
 						//If we have error, fail gracefully
 						loadingView.setTextViewText(R.id.message, getString(R.string.error_loading_music));
 						loadingView.setViewVisibility(R.id.progressBar, View.GONE);
-						mLiveCard.setViews(loadingView);
+						liveCard.setViews(loadingView);
 						//Start a three second timer to kill the program
 						new CountDownTimer(3000,3000) 
 						{							
@@ -223,7 +232,7 @@ public class MainService extends Service
 					super.onPostExecute(result);
 				}				
 	        }.execute();	        
-	        mLiveCard.publish(LiveCard.PublishMode.REVEAL);
+	        liveCard.publish(LiveCard.PublishMode.REVEAL);
 	    }
 		return START_STICKY;
 	}
@@ -233,24 +242,30 @@ public class MainService extends Service
 	 */
 	public MediaPlayer getMediaPlayer()
 	{
-		return mMediaPlayer;
+		return mediaPlayer;
 	}
 	@Override
 	public void onDestroy() 
 	{
+		//Clear our shuffled songs list if we have one
+		if(shuffledSongs!=null)
+		{
+			shuffledSongs.clear();
+			shuffledSongs=null;
+		}
 		//Empty our song list
 		songs.clear();
 		songs=null;
 		//unpublish our live card
-		if (mLiveCard != null) 
+		if (liveCard != null) 
 		{
-			mLiveCard.unpublish();
-		    mLiveCard = null;
+			liveCard.unpublish();
+		    liveCard = null;
 		}
 		//Stop our MediaPlayer and release its resources
-		mMediaPlayer.stop();
-		mMediaPlayer.release();
-		mMediaPlayer=null;
+		mediaPlayer.stop();
+		mediaPlayer.release();
+		mediaPlayer=null;
 		if(handler!=null)
 		{
 			 handler.removeCallbacks(updateTask);
@@ -281,7 +296,7 @@ public class MainService extends Service
 				 handler.removeCallbacks(updateTask);				
 			}
 			paused=true;
-			mMediaPlayer.pause();
+			mediaPlayer.pause();
 		}
 	}
 	/***
@@ -292,7 +307,7 @@ public class MainService extends Service
 		if(paused)
 		{
 			paused=false;
-			mMediaPlayer.start();
+			mediaPlayer.start();
 			handler.postAtTime(updateTask, 250);
 		}
 	}
@@ -305,7 +320,7 @@ public class MainService extends Service
 		if(songIndex>0)
 		{
 			//If they are above the minimum time, start the track over
-			if(mMediaPlayer.getCurrentPosition()>PREVIOUS_TRACKER_MIN)
+			if(mediaPlayer.getCurrentPosition()>PREVIOUS_TRACKER_MIN)
 			{
 				try
 				{
@@ -313,16 +328,36 @@ public class MainService extends Service
 					{
 						 handler.removeCallbacks(updateTask);
 					}
-					mMediaPlayer.stop();
-					mMediaPlayer.reset();
-					mMediaPlayer.setDataSource(songs.get(songIndex).getLocation());
-					mMediaPlayer.prepare();
-		        	mMediaPlayer.start();
-		        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-		        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
+					mediaPlayer.stop();
+					mediaPlayer.reset();
+					Bitmap bm=null;
+					//Get the appropriate song based on if we are shuffled or not
+					if(shuffled)
+					{
+						mediaPlayer.setDataSource(shuffledSongs.get(songIndex).getLocation());
+						mediaPlayer.prepare();
+			        	mediaPlayer.start();
+			        	render.setTextOfView(shuffledSongs.get(songIndex).getTitle(), shuffledSongs.get(songIndex).getArtist(), null);
+			        	bm=cache.getBitmapFromMemCache(String.valueOf(shuffledSongs.get(songIndex).getLocation().hashCode()));	
+					}
+					else
+					{
+						mediaPlayer.setDataSource(songs.get(songIndex).getLocation());
+						mediaPlayer.prepare();
+			        	mediaPlayer.start();
+			        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
+			        	bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));		
+					}					
 			 	    if(bm==null)
 			 	    {
-			 	    	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+			 	    	if(shuffled)
+			 	    	{
+			 	    		new LoadAlbumBitmap().execute(shuffledSongs.get(songIndex).getLocation());
+			 	    	}
+			 	    	else
+			 	    	{
+			 	    		new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+			 	    	}
 			 	    }
 			 	    else
 			 	    {
@@ -345,16 +380,36 @@ public class MainService extends Service
 						 handler.removeCallbacks(updateTask);
 					}
 					songIndex--;
-					mMediaPlayer.stop();
-					mMediaPlayer.reset();
-					mMediaPlayer.setDataSource(songs.get(songIndex).getLocation());
-					mMediaPlayer.prepare();
-		        	mMediaPlayer.start();
-		        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-		        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
+					mediaPlayer.stop();
+					mediaPlayer.reset();
+					Bitmap bm=null;
+					//Get the appropriate song based on if we are shuffled or not
+					if(shuffled)
+					{
+						mediaPlayer.setDataSource(shuffledSongs.get(songIndex).getLocation());
+						mediaPlayer.prepare();
+			        	mediaPlayer.start();
+			        	render.setTextOfView(shuffledSongs.get(songIndex).getTitle(), shuffledSongs.get(songIndex).getArtist(), null);
+			        	bm=cache.getBitmapFromMemCache(String.valueOf(shuffledSongs.get(songIndex).getLocation().hashCode()));	
+					}
+					else
+					{
+						mediaPlayer.setDataSource(songs.get(songIndex).getLocation());
+						mediaPlayer.prepare();
+			        	mediaPlayer.start();
+			        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
+			        	bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));		
+					}					
 			 	    if(bm==null)
 			 	    {
-			 	    	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+			 	    	if(shuffled)
+			 	    	{
+			 	    		new LoadAlbumBitmap().execute(shuffledSongs.get(songIndex).getLocation());
+			 	    	}
+			 	    	else
+			 	    	{
+			 	    		new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+			 	    	}
 			 	    }
 			 	   else
 			 	    {
@@ -377,16 +432,36 @@ public class MainService extends Service
 					 handler.removeCallbacks(updateTask);
 				}
 				songIndex=0;
-				mMediaPlayer.stop();
-				mMediaPlayer.reset();
-				mMediaPlayer.setDataSource(songs.get(songIndex).getLocation());
-				mMediaPlayer.prepare();
-	        	mMediaPlayer.start();
-	        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-	        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
+				mediaPlayer.stop();
+				mediaPlayer.reset();
+				Bitmap bm=null;
+				//Get the appropriate song based on if we are shuffled or not
+				if(shuffled)
+				{
+					mediaPlayer.setDataSource(shuffledSongs.get(songIndex).getLocation());
+					mediaPlayer.prepare();
+		        	mediaPlayer.start();
+		        	render.setTextOfView(shuffledSongs.get(songIndex).getTitle(), shuffledSongs.get(songIndex).getArtist(), null);
+		        	bm=cache.getBitmapFromMemCache(String.valueOf(shuffledSongs.get(songIndex).getLocation().hashCode()));	
+				}
+				else
+				{
+					mediaPlayer.setDataSource(songs.get(songIndex).getLocation());
+					mediaPlayer.prepare();
+		        	mediaPlayer.start();
+		        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
+		        	bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));		
+				}					
 		 	    if(bm==null)
 		 	    {
-		 	    	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+		 	    	if(shuffled)
+		 	    	{
+		 	    		new LoadAlbumBitmap().execute(shuffledSongs.get(songIndex).getLocation());
+		 	    	}
+		 	    	else
+		 	    	{
+		 	    		new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+		 	    	}
 		 	    }
 		 	    else
 		 	    {
@@ -405,71 +480,87 @@ public class MainService extends Service
 	 */
 	public void nextTrack()
 	{
-		//Make sure we are in our limits of the list
-		if(songIndex-1<songs.size())
+		//If we are currently shuffling the songs, we choose our next song based on the appropriate list
+		if(shuffled)
 		{
-			try
-			{		
-				if(handler!=null)
-				{
-					 handler.removeCallbacks(updateTask);
-				}
-				songIndex++;
-				mMediaPlayer.stop();
-				mMediaPlayer.reset();
-				mMediaPlayer.setDataSource(songs.get(songIndex).getLocation());
-				mMediaPlayer.prepare();
-	        	mMediaPlayer.start();
-	        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-	        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
-		 	    if(bm==null)
-		 	    {
-		 	    	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
-		 	    }
-		 	    else
-		 	    {
-		 	    	render.setAlbumArtwork(bm);
-		 	    }
-	        	handler.postAtTime(updateTask, 250);
-			}
-			catch (Exception e)
+			//Make sure we are in our limits of the shuffled list
+			if(songIndex+1<shuffledSongs.size())
 			{
-				
+				try
+				{		
+					if(handler!=null)
+					{
+						 handler.removeCallbacks(updateTask);
+					}
+					songIndex++;
+					mediaPlayer.stop();
+					mediaPlayer.reset();
+					mediaPlayer.setDataSource(shuffledSongs.get(songIndex).getLocation());
+					mediaPlayer.prepare();
+		        	mediaPlayer.start();
+		        	render.setTextOfView(shuffledSongs.get(songIndex).getTitle(), shuffledSongs.get(songIndex).getArtist(), null);
+		        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(shuffledSongs.get(songIndex).getLocation().hashCode()));	
+			 	    if(bm==null)
+			 	    {
+			 	    	new LoadAlbumBitmap().execute(shuffledSongs.get(songIndex).getLocation());
+			 	    }
+			 	    else
+			 	    {
+			 	    	render.setAlbumArtwork(bm);
+			 	    }
+		        	handler.postAtTime(updateTask, 250);
+				}
+				catch (Exception e)
+				{
+					
+				}
+			}
+			//If we are at the end of the list, kill the application
+			else
+			{
+				stopSelf();	
 			}
 		}
-		//If we are at the end of the list, go back to the beginning
 		else
 		{
-			try
-			{	
-				if(handler!=null)
-				{
-					 handler.removeCallbacks(updateTask);
-				}
-				songIndex=0;
-				mMediaPlayer.stop();
-				mMediaPlayer.reset();
-				mMediaPlayer.setDataSource(songs.get(songIndex).getLocation());
-				mMediaPlayer.prepare();
-	        	mMediaPlayer.start();
-	        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-	        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
-		 	    if(bm==null)
-		 	    {
-		 	    	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
-		 	    }
-		 	    else
-		 	    {
-		 	    	render.setAlbumArtwork(bm);
-		 	    }
-	        	handler.postAtTime(updateTask, 250);
-			}
-			catch (Exception e)
+			//Make sure we are in our limits of the list
+			if(songIndex+1<songs.size())
 			{
-				
+				try
+				{		
+					if(handler!=null)
+					{
+						 handler.removeCallbacks(updateTask);
+					}
+					songIndex++;
+					mediaPlayer.stop();
+					mediaPlayer.reset();
+					mediaPlayer.setDataSource(songs.get(songIndex).getLocation());
+					mediaPlayer.prepare();
+		        	mediaPlayer.start();
+		        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
+		        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
+			 	    if(bm==null)
+			 	    {
+			 	    	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
+			 	    }
+			 	    else
+			 	    {
+			 	    	render.setAlbumArtwork(bm);
+			 	    }
+		        	handler.postAtTime(updateTask, 250);
+				}
+				catch (Exception e)
+				{
+					
+				}
 			}
-			
-		}
+			//If we are at the end of the list, kill the application
+			else
+			{
+				stopSelf();
+			}
+		}		
 	}
 	/***
 	 * Converts milliseconds to a Human readable format
@@ -501,7 +592,7 @@ public class MainService extends Service
 		@Override
 		public void run() 
 		{
-			String curr=getHumanReadableTime(mMediaPlayer.getCurrentPosition());		
+			String curr=getHumanReadableTime(mediaPlayer.getCurrentPosition());		
 			render.setTextOfView(null, null, curr);
 			//we will update it every quarter of a second
 			handler.postDelayed(this, 250);
@@ -542,6 +633,89 @@ public class MainService extends Service
 				}
 			}
 			super.onPostExecute(result);;
+		}
+	}
+	/***
+	 * @return if the music is being shuffle 
+	 */
+	public boolean isShuffled()
+	{
+		return shuffled;
+	}
+	/***
+	 * Shuffles our music. If the music is already shuffled, it will be turned off. When music
+	 * gets shuffled, it stops the current playback and starts over with the shuffled list.
+	 */
+	public void shuffleMusic()
+	{
+		if(shuffled)
+		{
+			try
+			{
+				shuffled=false;
+				//Get which song is currently being played
+				MusicItem item=shuffledSongs.get(songIndex);
+				//We will loop and find which position that song is at from our original list
+				//The music playback will not stop but just continue from the original list
+				for(int i=0;i<songs.size();i++)
+				{
+					if(item.getId()==songs.get(i).getId())
+					{
+						songIndex=i;
+						break;
+					}
+				}
+				shuffledSongs.clear();
+				shuffledSongs=null;
+			}
+			catch (Exception e)
+			{
+				
+			}
+		}
+		else
+		{
+			try
+			{
+				shuffled=true;
+				shuffledSongs=new ArrayList<MusicItem>();
+				Random ran= new Random();
+				//Shuffling will always take the entire list and shuffle them randomly
+				List<MusicItem>temp =new ArrayList<MusicItem>(songs);
+				while(temp.size()>0)
+				{
+					int selected=ran.nextInt(temp.size());
+					shuffledSongs.add(temp.get(selected));
+					temp.remove(selected);
+				}
+				temp=null;
+				songIndex=0;
+				if(handler!=null)
+				{
+					 handler.removeCallbacks(updateTask);
+				}
+				//Once we get our shuffled list, stop the music and start it again using the shuffled list
+				mediaPlayer.stop();
+				mediaPlayer.reset();
+				mediaPlayer.setDataSource(shuffledSongs.get(songIndex).getLocation());
+				mediaPlayer.prepare();
+	        	mediaPlayer.start();
+	        	render.setTextOfView(shuffledSongs.get(songIndex).getTitle(), shuffledSongs.get(songIndex).getArtist(), null);
+	        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(shuffledSongs.get(songIndex).getLocation().hashCode()));	
+		 	    if(bm==null)
+		 	    {
+		 	    	new LoadAlbumBitmap().execute(shuffledSongs.get(songIndex).getLocation());
+		 	    }
+		 	    else
+		 	    {
+		 	    	render.setAlbumArtwork(bm);
+		 	    }
+	        	handler.postAtTime(updateTask, 250);
+			}
+			catch (Exception e)
+			{
+				
+			}
 		}
 	}
 }

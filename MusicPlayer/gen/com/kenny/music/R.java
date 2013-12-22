@@ -33,6 +33,8 @@ public final class R {
         public static final int progressbar_indeterminate_6=0x7f02000d;
         public static final int progressbar_indeterminate_7=0x7f02000e;
         public static final int progressbar_indeterminate_8=0x7f02000f;
+        public static final int shuffle_off=0x7f020010;
+        public static final int shuffle_on=0x7f020011;
     }
     public static final class id {
         public static final int albumArt=0x7f090000;
@@ -42,7 +44,8 @@ public final class R {
         public static final int play_pause=0x7f090006;
         public static final int prev=0x7f090007;
         public static final int progressBar=0x7f090005;
-        public static final int stop=0x7f090009;
+        public static final int shuffle=0x7f090009;
+        public static final int stop=0x7f09000a;
         public static final int time=0x7f090003;
         public static final int title=0x7f090001;
     }
@@ -55,16 +58,15 @@ public final class R {
     }
     public static final class string {
         public static final int app_name=0x7f060000;
-        public static final int error_loading_music=0x7f06000b;
-        public static final int loading_message=0x7f060009;
+        public static final int error_loading_music=0x7f06000a;
+        public static final int loading_message=0x7f060008;
         public static final int next=0x7f060005;
-        public static final int no_songs=0x7f06000a;
+        public static final int no_songs=0x7f060009;
         public static final int pause=0x7f060004;
         public static final int play=0x7f060003;
         public static final int previous=0x7f060006;
+        public static final int shuffle=0x7f060007;
         public static final int stop=0x7f060002;
-        public static final int suffle_off=0x7f060008;
-        public static final int suffle_on=0x7f060007;
         public static final int trigger_phrase=0x7f060001;
     }
     public static final class style {
