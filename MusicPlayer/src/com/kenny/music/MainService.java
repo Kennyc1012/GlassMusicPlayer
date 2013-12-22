@@ -64,38 +64,7 @@ public class MainService extends Service
 			@Override
 			public void onCompletion(MediaPlayer mp) 
 			{
-				//When the song finished, increment songIndex
-				songIndex++;
-				if(songIndex-1<songs.size())
-				{
-					try
-					{
-						if(handler!=null)
-						{
-							 handler.removeCallbacks(updateTask);
-						}
-						//Play the next song
-						mediaPlayer.reset();
-						mediaPlayer.setDataSource(songs.get(songIndex).getLocation());
-						mediaPlayer.prepare();
-			        	mediaPlayer.start();
-			        	render.setTextOfView(songs.get(songIndex).getTitle(), songs.get(songIndex).getArtist(), null);
-			        	Bitmap bm=cache.getBitmapFromMemCache(String.valueOf(songs.get(songIndex).getLocation().hashCode()));	
-			 	        if(bm==null)
-			 	        {
-			 	        	new LoadAlbumBitmap().execute(songs.get(songIndex).getLocation());
-			 	        }
-			 	        else
-				 	    {
-				 	    	render.setAlbumArtwork(bm);
-				 	    }
-			 	        handler.postDelayed(updateTask, 250);
-					}
-					catch (Exception e)
-					{
-						
-					}
-				}
+				nextTrack();
 			}
 		});
         songs = new ArrayList<MusicItem>();
