@@ -10,4 +10,4 @@ To use, adb sideload the apk to your glass as any other. The music files must be
 
 
 To trigger the app, say OK Glass...Play Music. 
-It will play the songs in the order they appear in the folder structure.
+It will play the songs in the order they appear in the folder structure. You can also shuffle your music so it is random.
