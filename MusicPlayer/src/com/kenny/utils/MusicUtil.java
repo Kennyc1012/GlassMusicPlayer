@@ -4,8 +4,8 @@ import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 public class MusicUtil 
 {
-	//Glass resolution constants, Our artwork will take up half of the screen with full height
-	private static final int GLASS_WIDTH=320;
+	//Glass resolution constants, Our artwork will take up the full screen
+	private static final int GLASS_WIDTH=640;
 	private static final int GLASS_HEIGHT=360;
 	/***
 	 * Gets an image for the Album Art Work
@@ -72,7 +72,7 @@ public class MusicUtil
 		}
 		catch (Exception e)
 		{
-			return null;
+			return "N/A";
 		}
 	}
 	/***
@@ -90,7 +90,7 @@ public class MusicUtil
 		}
 		catch (Exception e)
 		{
-			return null;
+			return "N/A";
 		}
 	}
 	/***
@@ -126,7 +126,7 @@ public class MusicUtil
 		}
 		catch (Exception e)
 		{
-			return null;
+			return "N/A";
 		}
 	}
 }

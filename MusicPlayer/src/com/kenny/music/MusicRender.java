@@ -14,6 +14,8 @@ public class MusicRender implements SurfaceHolder.Callback
 	private TextView title,artist,time;
 	private ImageView albumArt;
 	private View view;
+	private int surfaceWidth;
+	private int surfaceHeight;
 	/***
 	 * Renders the current song title, album artwork, and artist of the current song
 	 * @param context context of the view
@@ -21,7 +23,6 @@ public class MusicRender implements SurfaceHolder.Callback
 	public MusicRender(Context context)
 	{
 		view=LayoutInflater.from(context).inflate(R.layout.card, null);
-		view.setWillNotDraw(false);
 		title=(TextView)view.findViewById(R.id.title);
 		artist=(TextView)view.findViewById(R.id.artist);
 		time=(TextView)view.findViewById(R.id.time);
@@ -30,11 +31,10 @@ public class MusicRender implements SurfaceHolder.Callback
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,int height) 
 	{
-		 int measuredWidth = View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY);
-		 int measuredHeight = View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY);
-		 view.measure(measuredWidth, measuredHeight);
-		 view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
-		 draw();
+		surfaceWidth=width;
+		surfaceHeight=height;
+		doLayout();
+		draw();
 	}
 	@Override
 	public void surfaceCreated(SurfaceHolder holder)
@@ -45,6 +45,16 @@ public class MusicRender implements SurfaceHolder.Callback
 	public void surfaceDestroyed(SurfaceHolder holder) 
 	{
 		surfaceHolder=null;	
+	}
+	/***
+	 * Measures the layout
+	 */
+	private void doLayout()
+	{
+		int measuredWidth = View.MeasureSpec.makeMeasureSpec(surfaceWidth,View.MeasureSpec.EXACTLY);
+		int measuredHeight = View.MeasureSpec.makeMeasureSpec(surfaceHeight,View.MeasureSpec.EXACTLY);
+		view.measure(measuredWidth, measuredHeight);
+		view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());				
 	}
 	/***
 	 * Redraw the view to the surface
@@ -62,6 +72,7 @@ public class MusicRender implements SurfaceHolder.Callback
 	    }
 	    if (canvas != null) 
 	    {
+	    	doLayout();
 	    	canvas.drawColor(0, Mode.CLEAR);
 	    	view.draw(canvas);
 		    try 
@@ -116,6 +127,7 @@ public class MusicRender implements SurfaceHolder.Callback
 		{
 			this.time.setText(time);
 		}
+		view.requestLayout();
 		draw();
 	}
 	/***

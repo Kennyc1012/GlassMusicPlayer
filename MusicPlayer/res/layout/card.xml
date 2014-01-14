@@ -1,47 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="horizontal">
+    android:layout_height="match_parent">
     <!-- Album artwork -->
     <ImageView 
-        android:layout_weight="1"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/albumArt"
         android:adjustViewBounds="true"
         android:scaleType="centerCrop"/>
-    <RelativeLayout 
-        android:layout_weight="1"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:padding="8dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#8C000000"
+        android:padding="8dp" >
 	    <!-- Song title -->
 	    <TextView 
-	        android:layout_width="match_parent"
+	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:textColor="#FFFFFF"
 	        android:id="@+id/title"
-	        android:maxLines="2"    
-	        android:minLines="2"
+	        android:maxLines="2"   
+	        android:drawablePadding="8dp"
+	        android:layout_centerHorizontal="true"
 	        style="?android:attr/textAppearanceMedium"/>
 	    <!-- Song Artist -->
 	    <TextView 
-	        android:layout_width="match_parent"
+	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:id="@+id/artist"
 	        android:textColor="#FFFFFF"
 	        android:layout_below="@id/title"
+	        android:layout_alignParentLeft="true"
 	        style="?android:attr/textAppearanceSmall"/>
 	    <!-- Time of song -->
-	
 		<TextView
 		    android:id="@+id/time"
 		    style="?android:attr/textAppearanceSmall"
 		    android:layout_width="wrap_content"
 		    android:layout_height="wrap_content"
-		    android:layout_alignParentBottom="true"
+		    android:layout_below="@id/title"
 		    android:layout_alignParentRight="true"
 		    android:textColor="#FFFFFF" />
 	</RelativeLayout>
-</LinearLayout>
+</RelativeLayout>

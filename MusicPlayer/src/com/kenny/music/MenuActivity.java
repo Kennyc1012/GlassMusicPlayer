@@ -117,7 +117,7 @@ public class MenuActivity extends Activity
     	//Play or Pause the song
     	case R.id.play_pause:
     		if(mService.isPaused())
-    		{
+    		{    		
     			mService.resumeMusic();
     		}
     		else
