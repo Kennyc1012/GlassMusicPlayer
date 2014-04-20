@@ -28,9 +28,19 @@ public class MenuActivity extends Activity
 		getMenuInflater().inflate(R.menu.menu, menu);
 		//Need reference to this so we can change its value to play or pause based on if the song is playing
 		play_paused=menu.findItem(R.id.play_pause);	
-		shuffled=menu.findItem(R.id.shuffle);
+		shuffled=menu.findItem(R.id.shuffle);	       
 		return true;
 	}
+	 @Override
+     public void onAttachedToWindow() 
+	 {
+         super.onAttachedToWindow();
+         //Bind to our service so we can manipulate theMediaPlayer if needed
+         Intent intent = new Intent(this, MainService.class);
+         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+         //Always open the options menu since its the reason why we are in the activity
+         openOptionsMenu();
+     }
 	 /** Defines callbacks for service binding, passed to bindService() */
     private ServiceConnection mConnection = new ServiceConnection() 
     {
@@ -69,9 +79,7 @@ public class MenuActivity extends Activity
     protected void onStart()
     {
         super.onStart();
-        //Bind to our service so we can manipulate theMediaPlayer if needed
-        Intent intent = new Intent(this, MainService.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        
     }
     @Override
     protected void onStop() 
@@ -83,14 +91,7 @@ public class MenuActivity extends Activity
             unbindService(mConnection);
             mBound = false;
         }
-    }
-    @Override
-    protected void onResume() 
-    {
-        super.onResume();
-        //Always open the options menu since its the reason why we are in the activity
-        openOptionsMenu();
-    }
+    }   
     @Override
     public void onOptionsMenuClosed(Menu menu)
     {
@@ -130,6 +131,6 @@ public class MenuActivity extends Activity
     		mService.shuffleMusic();
     		return true;
     	}
-    	return super.onOptionsItemSelected(item);
+    	return false;
     }
 }

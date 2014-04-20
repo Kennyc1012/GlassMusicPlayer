@@ -21,7 +21,6 @@ import android.view.View;
 import android.widget.RemoteViews;
 
 import com.google.android.glass.timeline.LiveCard;
-import com.google.android.glass.timeline.TimelineManager;
 import com.kenny.classes.MusicItem;
 import com.kenny.utils.MemoryCache;
 import com.kenny.utils.MusicUtil;
@@ -33,7 +32,6 @@ public class MainService extends Service
 	private final int PREVIOUS_TRACKER_MIN=1000*5;
 	private LiveCard liveCard;
 	private MediaPlayer mediaPlayer;
-	private TimelineManager timelineManager;
 	private List<MusicItem>songs,shuffledSongs;
 	private int songIndex=0;
 	private Handler handler = new Handler();
@@ -57,7 +55,6 @@ public class MainService extends Service
     public void onCreate() 
 	{
         super.onCreate();
-        timelineManager = TimelineManager.from(this);
         mediaPlayer= new MediaPlayer();
         mediaPlayer.setOnCompletionListener(new OnCompletionListener() 
         {			
@@ -76,7 +73,7 @@ public class MainService extends Service
 	{		
 		if (liveCard == null) 
 	    {
-			liveCard = timelineManager.createLiveCard(CARD_ID);
+			liveCard = new LiveCard(getApplicationContext(), CARD_ID);
 	        // Display the options menu when the live card is tapped.
 	        Intent menuIntent = new Intent(this, MenuActivity.class);
 	        menuIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
